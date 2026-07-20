@@ -20,3 +20,18 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; }
 kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; border: 2px solid #333; border-bottom-width: 4px; border-radius: 6px; background: #fafafa; text-align: center; font-weight: 800; }
 .note { text-align: center; font-weight: 700; }
 @media (max-width: 700px) { .controls { grid-template-columns: 1fr; } main { padding: 8px; } }
+
+#startButton[hidden] { display: none !important; }
+#status { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); padding: 5px 12px; border-radius: 999px; background: #fffddd; font-weight: 800; white-space: nowrap; }
+#status[hidden] { display: none !important; }
+.touch-controls { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.touch-player { border: 3px solid #222; border-radius: 16px; padding: 8px; background: #fff; text-align: center; }
+.touch-player strong { display: block; margin-bottom: 5px; }
+.touch-row { display: flex; justify-content: center; gap: 5px; margin: 5px 0; }
+.touch-row button { width: 48px; height: 43px; border: 2px solid #222; border-bottom-width: 5px; border-radius: 10px; background: #fff36a; font-size: 1rem; font-weight: 900; touch-action: none; }
+.touch-row button.active { transform: translateY(2px); border-bottom-width: 3px; background: #ffd735; }
+@media (pointer: coarse), (max-width: 900px) {
+  .touch-controls { display: grid; }
+  #startButton { bottom: 14px; font-size: 1.05rem; padding: 14px 28px; z-index: 4; }
+  #status { bottom: 72px; z-index: 3; }
+}

@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bird Bowl Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bird Bowl</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,6 +16,28 @@
     <section class="game-shell">
       <canvas id="game" width="1280" height="720" aria-label="Bird Bowl game"></canvas>
       <button id="startButton" type="button">開始 / リスタート</button>
+      <div id="status" aria-live="polite">開始ボタンを押してください</div>
+    </section>
+
+    <section class="touch-controls" aria-label="タッチ操作">
+      <div class="touch-player p1">
+        <strong>P1</strong>
+        <div class="touch-row">
+          <button data-code="KeyA">←</button><button data-code="KeyD">→</button><button data-code="KeyW">羽</button>
+        </div>
+        <div class="touch-row">
+          <button data-code="KeyF">突</button><button data-code="KeyG">上</button><button data-code="KeyH">下</button>
+        </div>
+      </div>
+      <div class="touch-player p2">
+        <strong>P2</strong>
+        <div class="touch-row">
+          <button data-code="ArrowLeft">←</button><button data-code="ArrowRight">→</button><button data-code="ArrowUp">羽</button>
+        </div>
+        <div class="touch-row">
+          <button data-code="KeyJ">突</button><button data-code="KeyK">上</button><button data-code="KeyL">下</button>
+        </div>
+      </div>
     </section>
 
     <section class="controls">

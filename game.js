@@ -4,6 +4,7 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   const startButton = document.getElementById("startButton");
+  const status = document.getElementById("status");
   const W = canvas.width;
   const H = canvas.height;
   const gravity = 1850;
@@ -76,9 +77,37 @@
     resetRound();
     running = true;
     startButton.hidden = true;
+    status.hidden = true;
+    lastTime = performance.now();
+    canvas.focus?.();
   }
 
   startButton.addEventListener("click", startGame);
+  startButton.addEventListener("pointerup", (event) => {
+    event.preventDefault();
+    if (!running) startGame();
+  });
+
+  document.querySelectorAll("[data-code]").forEach((button) => {
+    const code = button.dataset.code;
+    const down = (event) => {
+      event.preventDefault();
+      if (!running) startGame();
+      if (!keys.has(code)) pressed.add(code);
+      keys.add(code);
+      button.classList.add("active");
+      button.setPointerCapture?.(event.pointerId);
+    };
+    const up = (event) => {
+      event.preventDefault();
+      keys.delete(code);
+      button.classList.remove("active");
+    };
+    button.addEventListener("pointerdown", down);
+    button.addEventListener("pointerup", up);
+    button.addEventListener("pointercancel", up);
+    button.addEventListener("lostpointercapture", up);
+  });
 
   function random(a, b) { return a + Math.random() * (b - a); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
