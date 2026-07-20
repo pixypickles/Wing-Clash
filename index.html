@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bird Bowl Prototype</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Bird Bowl</h1>
+      <p>お椀型ステージで、ボールを相手側の巣へ叩き込む2人対戦プロトタイプ</p>
+    </header>
+
+    <section class="game-shell">
+      <canvas id="game" width="1280" height="720" aria-label="Bird Bowl game"></canvas>
+      <button id="startButton" type="button">開始 / リスタート</button>
+    </section>
+
+    <section class="controls">
+      <article>
+        <h2>プレイヤー1</h2>
+        <p><kbd>A</kbd><kbd>D</kbd> 移動　<kbd>W</kbd> 羽ばたき</p>
+        <p><kbd>F</kbd> 横突進　<kbd>G</kbd> 蹴り上げ　<kbd>H</kbd> 叩き落とし</p>
+      </article>
+      <article>
+        <h2>プレイヤー2</h2>
+        <p><kbd>←</kbd><kbd>→</kbd> 移動　<kbd>↑</kbd> 羽ばたき</p>
+        <p><kbd>J</kbd> 横突進　<kbd>K</kbd> 蹴り上げ　<kbd>L</kbd> 叩き落とし</p>
+      </article>
+    </section>
+
+    <p class="note">羽ばたきは無制限。上昇気流は強く短く、約4.5〜6.5秒ごとに発生します。</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
