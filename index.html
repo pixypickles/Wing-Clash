@@ -145,7 +145,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   const status = document.getElementById("status");
   const W = canvas.width;
   const H = canvas.height;
-  const gravity = 1850;
+  const gravity = 1500;
   const keys = new Set();
   const pressed = new Set();
 
@@ -421,9 +421,26 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     const fy = floorY(ball.x) - ball.radius;
     if (ball.y > fy) {
       ball.y = fy;
-      if (ball.vy > 0) ball.vy *= -0.62;
-      ball.vx *= 0.985;
-      if (Math.abs(ball.vy) < 80) ball.vy = -60;
+      if (ball.vy > 0) ball.vy *= -0.55;
+
+      // お椀の斜面に触れている間は、底の中央へしっかり転がす。
+      // 中央から遠いほど強く働き、中央付近では自然に弱まる。
+      const centerOffset = (W / 2 - ball.x) / (W / 2);
+      ball.vx += centerOffset * 820 * dt;
+      ball.vx *= 0.992;
+
+      if (Math.abs(ball.vy) < 65) ball.vy = -42;
+    }
+
+    // 巣の底は一方通行ではない。下側から突き抜けようとした球を弾き返す。
+    const nestBottom = 263;
+    const inLeftNestWidth = ball.x < 175;
+    const inRightNestWidth = ball.x > W - 175;
+    if ((inLeftNestWidth || inRightNestWidth) && ball.vy < 0 &&
+        ball.y - ball.radius < nestBottom && ball.y > nestBottom) {
+      ball.y = nestBottom + ball.radius;
+      ball.vy = Math.abs(ball.vy) * 0.62;
+      ball.vx += inLeftNestWidth ? 150 : -150;
     }
 
     for (const p of players) {
@@ -475,8 +492,12 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
 
   function checkGoal() {
     if (goalLock > 0) return;
-    const leftGoal = ball.x < 150 && ball.y < 245;
-    const rightGoal = ball.x > W - 150 && ball.y < 245;
+
+    // 巣は上から落ち込んだ時だけ得点。下からの突き上げでは入らない。
+    const enteringFromAbove = ball.vy > 0;
+    const insideNestHeight = ball.y > 155 && ball.y < 245;
+    const leftGoal = enteringFromAbove && insideNestHeight && ball.x < 150;
+    const rightGoal = enteringFromAbove && insideNestHeight && ball.x > W - 150;
     if (leftGoal) {
       score[1]++;
       resetRound();
