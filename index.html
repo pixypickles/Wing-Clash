@@ -31,21 +31,71 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
 #startButton[hidden] { display: none !important; }
 #status { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); padding: 5px 12px; border-radius: 999px; background: #fffddd; font-weight: 800; white-space: nowrap; }
 #status[hidden] { display: none !important; }
-.touch-controls { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; user-select: none; -webkit-user-select: none; touch-action: none; }
-.touch-player { border: 3px solid #222; border-radius: 16px; padding: 8px; background: #fff; text-align: center; }
-.touch-player strong { display: block; margin-bottom: 5px; }
-.touch-row { display: flex; justify-content: center; gap: 5px; margin: 5px 0; }
-.touch-row button { width: 48px; height: 43px; border: 2px solid #222; border-bottom-width: 5px; border-radius: 10px; background: #fff36a; font-size: 1rem; font-weight: 900; touch-action: none; }
-.touch-row button.active { transform: translateY(2px); border-bottom-width: 3px; background: #ffd735; }
+.touch-controls {
+  display: none;
+  position: relative;
+  min-height: 230px;
+  margin-top: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.dpad {
+  position: absolute;
+  left: 8px;
+  bottom: 4px;
+  width: 190px;
+  height: 190px;
+  border: 4px solid #222;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 8px #fff8ad;
+}
+.dpad button {
+  position: absolute;
+  width: 62px;
+  height: 62px;
+  border: 3px solid #222;
+  border-bottom-width: 6px;
+  border-radius: 18px;
+  background: #fff36a;
+  font-size: 1.65rem;
+  font-weight: 900;
+  touch-action: none;
+}
+.dpad .up { left: 61px; top: 10px; }
+.dpad .left { left: 10px; top: 61px; }
+.dpad .right { right: 10px; top: 61px; }
+.dpad .down { left: 61px; bottom: 10px; }
+.action-pad {
+  position: absolute;
+  right: 8px;
+  bottom: 16px;
+  width: 180px;
+  height: 180px;
+}
+.action-pad button {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border: 3px solid #222;
+  border-bottom-width: 7px;
+  border-radius: 50%;
+  background: #fff36a;
+  font-size: 1.25rem;
+  font-weight: 900;
+  touch-action: none;
+}
+.action-pad .wing { left: 0; top: 0; }
+.action-pad .a { right: 0; top: 42px; }
+.action-pad .b { left: 26px; bottom: 0; }
+.touch-controls button.active { transform: translateY(3px); border-bottom-width: 3px; background: #ffd735; }
 @media (pointer: coarse), (max-width: 900px) {
-  .touch-controls { display: grid; }
+  .touch-controls { display: block; }
   #startButton { bottom: 14px; font-size: 1.05rem; padding: 14px 28px; z-index: 4; }
   #status { bottom: 72px; z-index: 3; }
 }
-
 #startButton.running { bottom: auto; top: 10px; right: 10px; left: auto; inset-inline-start: auto; transform: none; padding: 7px 13px; font-size: .8rem; opacity: .82; z-index: 5; }
-.touch-controls { grid-template-columns: 1fr; max-width: 460px; margin-inline: auto; }
-.touch-player { padding: 10px; }
 </style>
 </head>
 <body>
@@ -60,29 +110,31 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       <div id="status" aria-live="polite">読み込み中…</div>
     </section>
     <section class="touch-controls" aria-label="タッチ操作">
-      <div class="touch-player p1">
-        <strong>あなた</strong>
-        <div class="touch-row">
-          <button data-code="KeyA">←</button><button data-code="KeyD">→</button><button data-code="KeyW">羽</button>
-        </div>
-        <div class="touch-row">
-          <button data-code="KeyF">突</button><button data-code="KeyG">上</button><button data-code="KeyH">下</button>
-        </div>
+      <div class="dpad" aria-label="方向キー">
+        <button class="up" data-code="ArrowUp" aria-label="上">↑</button>
+        <button class="left" data-code="ArrowLeft" aria-label="左">←</button>
+        <button class="right" data-code="ArrowRight" aria-label="右">→</button>
+        <button class="down" data-code="ArrowDown" aria-label="下">↓</button>
+      </div>
+      <div class="action-pad" aria-label="アクションボタン">
+        <button class="wing" data-code="KeyC" aria-label="羽ばたき">翼</button>
+        <button class="a" data-code="KeyZ" aria-label="A攻撃">A</button>
+        <button class="b" data-code="KeyX" aria-label="B突進">B</button>
       </div>
     </section>
     <section class="controls">
       <article>
-        <h2>あなた</h2>
-        <p><kbd>A</kbd><kbd>D</kbd> 移動　<kbd>W</kbd> 羽ばたき</p>
-        <p><kbd>F</kbd> 横突進　<kbd>G</kbd> 蹴り上げ　<kbd>H</kbd> 叩き落とし</p>
+        <h2>操作</h2>
+        <p><kbd>方向キー</kbd> 移動・技の方向　<kbd>C</kbd> 羽ばたき</p>
+        <p><kbd>Z</kbd> A攻撃　<kbd>X</kbd> B突進</p>
       </article>
       <article>
-        <h2>対戦相手</h2>
-        <p>AIが自動で移動・羽ばたき・攻撃します。</p>
-        <p>右上の巣へボールを入れると、あなたの得点です。</p>
+        <h2>技の出し分け</h2>
+        <p>上＋A：蹴り上げ　横／無入力＋A：突き　下＋A：叩き落とし</p>
+        <p>上＋B：斜め上突進　横／無入力＋B：横突進　下＋B：斜め下突進</p>
       </article>
     </section>
-    <p class="note">羽ばたきは無制限。上昇気流は強く短く、約4.5〜6.5秒ごとに発生します。</p>
+    <p class="note">黄色があなた、青色がAIです。羽ばたきは無制限です。</p>
   </main>
   <script>(() => {
   "use strict";
@@ -119,9 +171,9 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   let goalLock = 0;
 
   const controls = [
-    { left: "KeyA", right: "KeyD", flap: "KeyW", dash: "KeyF", kick: "KeyG", slam: "KeyH" },
+    { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", flap: "KeyC", attackA: "KeyZ", attackB: "KeyX" },
   ];
-  const ai = { decision: 0, flap: false, dash: false, kick: false, slam: false, move: 0 };
+  const ai = { decision: 0, flap: false, attackA: false, attackB: false, move: 0, vertical: 0 };
 
   addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(event.code)) event.preventDefault();
@@ -201,20 +253,24 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     if (p.cooldown > 0 || p.action !== "neutral") return;
     p.action = action;
     p.hitUsed = false;
-    if (action === "dash") {
-      p.actionTime = 0.23;
-      p.cooldown = 0.58;
-      p.vx = p.facing * 1450;
-      p.vy *= 0.25;
+    if (action === "thrust") {
+      p.actionTime = 0.20; p.cooldown = 0.46;
+      p.vx += p.facing * 340; p.vy *= 0.55;
     } else if (action === "kick") {
-      p.actionTime = 0.28;
-      p.cooldown = 0.55;
-      p.vy = Math.min(p.vy, -250);
+      p.actionTime = 0.27; p.cooldown = 0.54;
+      p.vy = Math.min(p.vy, -300);
     } else if (action === "slam") {
-      p.actionTime = 0.34;
-      p.cooldown = 0.62;
-      p.vy = 1250;
-      p.vx *= 0.35;
+      p.actionTime = 0.32; p.cooldown = 0.60;
+      p.vy = 1180; p.vx *= 0.35;
+    } else if (action === "dash") {
+      p.actionTime = 0.23; p.cooldown = 0.58;
+      p.vx = p.facing * 1450; p.vy *= 0.22;
+    } else if (action === "dashUp") {
+      p.actionTime = 0.24; p.cooldown = 0.60;
+      p.vx = p.facing * 1080; p.vy = -930;
+    } else if (action === "dashDown") {
+      p.actionTime = 0.26; p.cooldown = 0.60;
+      p.vx = p.facing * 1080; p.vy = 930;
     }
   }
 
@@ -222,19 +278,17 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     ai.decision -= dt;
     const dx = ball.x - p.x;
     const dy = ball.y - p.y;
-    const ownGoalDanger = ball.x > W * 0.68;
-    const targetX = ownGoalDanger ? ball.x : Math.max(W * 0.48, ball.x - 55);
+    const targetX = ball.x > W * 0.68 ? ball.x : Math.max(W * 0.48, ball.x - 55);
     ai.move = Math.abs(targetX - p.x) < 24 ? 0 : Math.sign(targetX - p.x);
-    ai.flap = false; ai.dash = false; ai.kick = false; ai.slam = false;
-
+    ai.vertical = dy < -45 ? -1 : dy > 45 ? 1 : 0;
+    ai.flap = false; ai.attackA = false; ai.attackB = false;
     if (ai.decision <= 0) {
-      ai.decision = random(0.07, 0.16);
-      if ((dy < -55 || p.y > floorY(p.x) - 170) && p.flapCooldown <= 0) ai.flap = true;
-      const closeX = Math.abs(dx) < 105;
+      ai.decision = random(0.08, 0.17);
+      if ((dy < -55 || p.y > floorY(p.x) - 165) && p.flapCooldown <= 0) ai.flap = true;
       if (p.cooldown <= 0 && p.action === "neutral") {
-        if (closeX && dy < -18) ai.kick = true;
-        else if (closeX && dy > 38) ai.slam = true;
-        else if (Math.abs(dx) < 230 && Math.abs(dy) < 85) ai.dash = true;
+        const close = Math.abs(dx) < 115 && Math.abs(dy) < 120;
+        if (close) ai.attackA = true;
+        else if (Math.abs(dx) < 285) ai.attackB = true;
       }
     }
   }
@@ -247,21 +301,19 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     p.flash = Math.max(0, p.flash - dt);
 
     if (p.action === "neutral") {
-      let move = 0;
-      let flapNow = false, dashNow = false, kickNow = false, slamNow = false;
+      let move = 0, vertical = 0;
+      let flapNow = false, attackANow = false, attackBNow = false;
       if (p.index === 0) {
         if (keys.has(c.left)) move -= 1;
         if (keys.has(c.right)) move += 1;
+        if (keys.has(c.up)) vertical -= 1;
+        if (keys.has(c.down)) vertical += 1;
         flapNow = pressed.has(c.flap);
-        dashNow = pressed.has(c.dash);
-        kickNow = pressed.has(c.kick);
-        slamNow = pressed.has(c.slam);
+        attackANow = pressed.has(c.attackA);
+        attackBNow = pressed.has(c.attackB);
       } else {
-        move = ai.move;
-        flapNow = ai.flap;
-        dashNow = ai.dash;
-        kickNow = ai.kick;
-        slamNow = ai.slam;
+        move = ai.move; vertical = ai.vertical;
+        flapNow = ai.flap; attackANow = ai.attackA; attackBNow = ai.attackB;
       }
       if (move) p.facing = move;
       const target = move * 390;
@@ -273,9 +325,16 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
         p.action = "flap";
         p.actionTime = 0.13;
       }
-      if (dashNow) beginAction(p, "dash");
-      if (kickNow) beginAction(p, "kick");
-      if (slamNow) beginAction(p, "slam");
+      if (attackANow) {
+        if (vertical < 0) beginAction(p, "kick");
+        else if (vertical > 0) beginAction(p, "slam");
+        else beginAction(p, "thrust");
+      }
+      if (attackBNow) {
+        if (vertical < 0) beginAction(p, "dashUp");
+        else if (vertical > 0) beginAction(p, "dashDown");
+        else beginAction(p, "dash");
+      }
     } else {
       p.actionTime -= dt;
       if (p.actionTime <= 0) p.action = "neutral";
@@ -284,7 +343,6 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     p.vy += gravity * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-
     p.x = clamp(p.x, 30, W - 30);
     if (p.x <= 31 || p.x >= W - 31) p.vx *= -0.35;
 
@@ -296,16 +354,18 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       if (Math.abs(p.vy) < 100) p.vy = 0;
       p.grounded = true;
       p.vx *= 0.94;
-      if (p.action === "slam") p.action = "neutral";
+      if (["slam", "dashDown"].includes(p.action)) p.action = "neutral";
     }
-
     applyUpdraft(p, dt, 1);
   }
 
   function attackHitbox(p) {
-    if (p.action === "dash") return { x: p.x + p.facing * 62, y: p.y, r: 63, kx: p.facing * 1250, ky: -130 };
-    if (p.action === "kick") return { x: p.x + p.facing * 25, y: p.y - 62, r: 58, kx: p.facing * 300, ky: -1320 };
-    if (p.action === "slam") return { x: p.x + p.facing * 10, y: p.y + 62, r: 62, kx: p.facing * 260, ky: 1380 };
+    if (p.action === "thrust") return { x: p.x + p.facing * 64, y: p.y, r: 58, kx: p.facing * 1380, ky: -80 };
+    if (p.action === "dash") return { x: p.x + p.facing * 68, y: p.y, r: 64, kx: p.facing * 1550, ky: -120 };
+    if (p.action === "dashUp") return { x: p.x + p.facing * 55, y: p.y - 44, r: 64, kx: p.facing * 1120, ky: -1180 };
+    if (p.action === "dashDown") return { x: p.x + p.facing * 55, y: p.y + 44, r: 64, kx: p.facing * 1120, ky: 1180 };
+    if (p.action === "kick") return { x: p.x + p.facing * 25, y: p.y - 62, r: 58, kx: p.facing * 300, ky: -1420 };
+    if (p.action === "slam") return { x: p.x + p.facing * 10, y: p.y + 62, r: 62, kx: p.facing * 260, ky: 1480 };
     return null;
   }
 
@@ -530,19 +590,21 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   function drawPlayer(p) {
     let img = images.neutral;
     if (p.action === "flap") img = images.flap;
-    if (p.action === "dash") img = images.dash;
+    if (["dash", "dashUp", "dashDown", "thrust"].includes(p.action)) img = images.dash;
 
     ctx.save();
     ctx.translate(p.x, p.y);
     if (p.facing < 0) ctx.scale(-1, 1);
-
     let rotation = 0;
     if (p.action === "kick") rotation = -0.48;
     if (p.action === "slam") rotation = 0.72;
+    if (p.action === "dashUp") rotation = -0.58;
+    if (p.action === "dashDown") rotation = 0.58;
     ctx.rotate(rotation);
-
+    if (p.index === 1) ctx.filter = "hue-rotate(185deg) saturate(1.35) brightness(.88)";
     if (p.flash > 0) ctx.globalAlpha = 0.45 + Math.sin(performance.now() * .06) * .25;
-    const w = p.action === "dash" ? 138 : 112;
+    const fast = ["dash", "dashUp", "dashDown", "thrust"].includes(p.action);
+    const w = fast ? 138 : 112;
     const ratio = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 0.8;
     const h = w * ratio;
     ctx.drawImage(img, -w * 0.5, -h * 0.55, w, h);
