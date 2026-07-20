@@ -130,7 +130,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       </article>
       <article>
         <h2>技の出し分け</h2>
-        <p>上＋A：蹴り上げ　横／無入力＋A：突き　下＋A：叩き落とし</p>
+        <p>A：蹴り上げ専用</p>
         <p>上＋B：斜め上突進　横／無入力＋B：横突進　下＋B：斜め下突進</p>
       </article>
     </section>
@@ -263,14 +263,14 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       p.actionTime = 0.32; p.cooldown = 0.60;
       p.vy = 1180; p.vx *= 0.35;
     } else if (action === "dash") {
-      p.actionTime = 0.23; p.cooldown = 0.58;
-      p.vx = p.facing * 1450; p.vy *= 0.22;
+      p.actionTime = 0.18; p.cooldown = 0.48;
+      p.vx = p.facing * 850; p.vy *= 0.35;
     } else if (action === "dashUp") {
-      p.actionTime = 0.24; p.cooldown = 0.60;
-      p.vx = p.facing * 1080; p.vy = -930;
+      p.actionTime = 0.19; p.cooldown = 0.50;
+      p.vx = p.facing * 650; p.vy = -570;
     } else if (action === "dashDown") {
-      p.actionTime = 0.26; p.cooldown = 0.60;
-      p.vx = p.facing * 1080; p.vy = 930;
+      p.actionTime = 0.19; p.cooldown = 0.50;
+      p.vx = p.facing * 650; p.vy = 570;
     }
   }
 
@@ -319,6 +319,13 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       const target = move * 390;
       p.vx += (target - p.vx) * Math.min(1, dt * (p.grounded ? 11 : 6));
 
+      // 上入力は、羽ばたきより弱い持続上昇。
+      // 重力には逆らえるが、上昇速度は低く抑える。
+      if (vertical < 0 && !flapNow) {
+        p.vy -= 1900 * dt;
+        p.vy = Math.max(p.vy, -260);
+      }
+
       if (flapNow && p.flapCooldown <= 0) {
         p.vy = Math.min(p.vy - 520, -660);
         p.flapCooldown = 0.18;
@@ -326,9 +333,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
         p.actionTime = 0.13;
       }
       if (attackANow) {
-        if (vertical < 0) beginAction(p, "kick");
-        else if (vertical > 0) beginAction(p, "slam");
-        else beginAction(p, "thrust");
+        beginAction(p, "kick");
       }
       if (attackBNow) {
         if (vertical < 0) beginAction(p, "dashUp");
