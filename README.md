@@ -1,8 +1,3 @@
-# Bird Bowl 1v1 + Black Bird
+# Bird Bowl
 
-GitHub Pages向けの単一ファイル版です。`index.html`をリポジトリ直下へ置いてください。
-
-- 黄色: プレイヤー
-- 青: AI
-- 黒: 第三勢力。気まぐれにボールを咥えたり、突進したりします。
-- ページを開くと自動開始します。
+GitHub Pages用の単一HTML版です。`index.html`をリポジトリ直下へ置いてください。
