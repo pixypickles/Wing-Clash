@@ -102,12 +102,12 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   <main>
     <header>
       <h1>Bird Bowl</h1>
-      <p>深いお椀型ステージで戦う、1人＋AI対AI2羽の2対2プロトタイプ</p>
+      <p>深いお椀型ステージで戦う、1対1＋気まぐれな黒い鳥</p>
     </header>
     <section class="game-shell">
       <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Bird Bowl game"></canvas>
-      <button id="startButton" type="button">開始</button>
-      <div id="status" aria-live="polite">読み込み中…</div>
+      <button id="startButton" type="button" hidden>開始</button>
+      <div id="status" aria-live="polite" hidden></div>
     </section>
     <section class="touch-controls" aria-label="タッチ操作">
       <div class="dpad" aria-label="方向キー">
@@ -134,7 +134,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
         <p>上＋B：斜め上突進　横／無入力＋B：横突進　下＋B：斜め下突進</p>
       </article>
     </section>
-    <p class="note">黄色チームがあなた＋味方AI、青色チームが相手AI2羽です。羽ばたきは無制限です。</p>
+    <p class="note">黄色があなた、青色が相手AIです。黒い鳥はどちらの味方でもなく、気まぐれにボールを咥えたり突進したりします。</p>
   </main>
   <script>(() => {
   "use strict";
@@ -169,6 +169,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   let score = [0, 0];
   let updraft;
   let goalLock = 0;
+  let neutralCarry = null;
   const platforms = [
     { x: 430, y: 430, w: 150, h: 18 },
     { x: 700, y: 430, w: 150, h: 18 },
@@ -210,11 +211,14 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
 
   function resetRound() {
     players = [
-      makePlayer(315, 1, 0, 0, false),
-      makePlayer(470, 1, 1, 0, true),
-      makePlayer(810, -1, 2, 1, true),
-      makePlayer(965, -1, 3, 1, true),
+      makePlayer(330, 1, 0, 0, false),
+      makePlayer(950, -1, 1, 1, true),
+      makePlayer(640, Math.random() < .5 ? -1 : 1, 2, 2, true),
     ];
+    players[2].neutral = true;
+    players[2].aiState.mood = random(0.5, 1.6);
+    players[2].aiState.carryTime = 0;
+    neutralCarry = null;
     ball = { x: W / 2, y: 190, vx: 0, vy: 0, radius: 23, spin: 0 };
     updraft = { active: false, time: 0, next: random(4.5, 6.5), warning: 0 };
     goalLock = 0.8;
@@ -224,9 +228,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     score = [0, 0];
     resetRound();
     running = true;
-    startButton.hidden = false;
-    startButton.textContent = "リスタート";
-    startButton.classList.add("running");
+    startButton.hidden = true;
     status.hidden = true;
     lastTime = performance.now();
     canvas.focus?.();
@@ -287,12 +289,48 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   function updateAI(p, dt) {
     const ai = p.aiState;
     ai.decision -= dt;
+
+    if (p.neutral) {
+      ai.mood -= dt;
+      ai.flap = false; ai.attackA = false; ai.attackB = false;
+      const dx = ball.x - p.x, dy = ball.y - p.y;
+
+      if (neutralCarry === p) {
+        ai.carryTime -= dt;
+        ai.move = p.facing;
+        ai.vertical = ball.y < 260 ? 1 : -1;
+        if (p.y > floorY(p.x) - 120 || Math.random() < .018) ai.flap = true;
+        if (ai.carryTime <= 0 || Math.random() < .008) {
+          neutralCarry = null;
+          ball.vx = p.facing * random(520, 900);
+          ball.vy = random(-520, -180);
+          ai.attackB = true;
+          ai.mood = random(1.2, 2.8);
+        }
+        return;
+      }
+
+      if (ai.mood <= 0) {
+        ai.mood = random(0.8, 2.4);
+        ai.mode = Math.random() < .62 ? "ball" : "wander";
+        ai.wanderX = random(180, W - 180);
+      }
+      const targetX = ai.mode === "ball" ? ball.x : ai.wanderX;
+      ai.move = Math.abs(targetX - p.x) < 30 ? 0 : Math.sign(targetX - p.x);
+      ai.vertical = dy < -55 ? -1 : dy > 90 ? 1 : 0;
+      if ((dy < -45 || p.y > floorY(p.x) - 125) && p.flapCooldown <= 0 && Math.random() < .22) ai.flap = true;
+      if (Math.abs(dx) < 65 && Math.abs(dy) < 60 && Math.random() < .12) {
+        neutralCarry = p;
+        ai.carryTime = random(.8, 1.8);
+      } else if (p.cooldown <= 0 && Math.abs(dx) < 250 && Math.random() < .045) {
+        ai.attackB = true;
+      }
+      return;
+    }
+
     const dx = ball.x - p.x;
     const dy = ball.y - p.y;
-    const attackingRight = p.team === 0;
-    const supportOffset = p.index % 2 ? -70 : 70;
-    let targetX = ball.x + (attackingRight ? -55 : 55) + supportOffset;
-    targetX = clamp(targetX, 90, W - 90);
+    const targetX = clamp(ball.x + 55, 90, W - 90);
     ai.move = Math.abs(targetX - p.x) < 22 ? 0 : Math.sign(targetX - p.x);
     ai.vertical = dy < -45 ? -1 : dy > 50 ? 1 : 0;
     ai.flap = false; ai.attackA = false; ai.attackB = false;
@@ -302,7 +340,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       if (p.cooldown <= 0 && p.action === "neutral") {
         const closeBall = Math.abs(dx) < 110 && Math.abs(dy) < 120;
         if (closeBall && ball.y < p.y + 45) ai.attackA = true;
-        else if (Math.abs(dx) < 235 && Math.random() < 0.55) ai.attackB = true;
+        else if (Math.abs(dx) < 220 && Math.random() < 0.45) ai.attackB = true;
       }
     }
   }
@@ -326,6 +364,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
         attackANow = pressed.has(c.attackA);
         attackBNow = pressed.has(c.attackB);
       } else {
+        const ai = p.aiState;
         move = ai.move; vertical = ai.vertical;
         flapNow = ai.flap; attackANow = ai.attackA; attackBNow = ai.attackB;
       }
@@ -407,7 +446,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       if (!hit || p.hitUsed) continue;
       let connected = false;
       for (const other of players) {
-        if (other === p || other.team === p.team) continue;
+        if (other === p || (p.team !== 2 && other.team === p.team)) continue;
         if (len(other.x - hit.x, other.y - hit.y) < other.radius + hit.r) {
           other.vx = hit.kx;
           other.vy = hit.ky;
@@ -448,6 +487,14 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   }
 
   function updateBall(dt) {
+    if (neutralCarry) {
+      ball.x = neutralCarry.x + neutralCarry.facing * 44;
+      ball.y = neutralCarry.y - 6;
+      ball.vx = neutralCarry.vx;
+      ball.vy = neutralCarry.vy;
+      ball.spin += dt * 2;
+      return;
+    }
     ball.vy += gravity * dt;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
@@ -686,8 +733,8 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
 
   function drawPlayer(p) {
     let img = images.neutral;
-    if (p.action === "flap") img = images.flap;
-    if (["dash", "dashUp", "dashDown", "thrust"].includes(p.action)) img = images.dash;
+    if (p.action === "flap" && images.flap?.complete) img = images.flap;
+    if (["dash", "dashUp", "dashDown", "thrust"].includes(p.action) && images.dash?.complete) img = images.dash;
 
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -699,12 +746,21 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     if (p.action === "dashDown") rotation = 0.58;
     ctx.rotate(rotation);
     if (p.team === 1) ctx.filter = "hue-rotate(185deg) saturate(1.35) brightness(.88)";
+    if (p.team === 2) ctx.filter = "grayscale(1) brightness(.14) contrast(2.2)";
     if (p.flash > 0) ctx.globalAlpha = 0.45 + Math.sin(performance.now() * .06) * .25;
     const fast = ["dash", "dashUp", "dashDown", "thrust"].includes(p.action);
     const w = fast ? 138 : 112;
     const ratio = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 0.8;
     const h = w * ratio;
     ctx.drawImage(img, -w * 0.5, -h * 0.55, w, h);
+    if (p.neutral) {
+      ctx.filter = "none";
+      ctx.scale(p.facing < 0 ? -1 : 1, 1);
+      ctx.fillStyle = "#222";
+      ctx.font = "800 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(neutralCarry === p ? "ボール泥棒！" : "気まぐれ", 0, -72);
+    }
     ctx.restore();
   }
 
@@ -712,7 +768,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     ctx.fillStyle = "#222";
     ctx.font = "900 52px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText(`黄色チーム ${score[0]}  -  ${score[1]} 青色チーム`, W/2, 65);
+    ctx.fillText(`あなた ${score[0]}  -  ${score[1]} AI`, W/2, 65);
     ctx.font = "800 22px system-ui";
     ctx.fillText(updraft.active ? "上昇気流！" : `次の風まで ${Math.max(0, updraft.next).toFixed(1)}秒`, W/2, 98);
   }
@@ -749,8 +805,8 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   }
 
   resetRound();
+  startGame();
   requestAnimationFrame(frame);
-  setTimeout(startGame, 80);
 })();
 </script>
 </body>
