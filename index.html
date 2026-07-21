@@ -102,7 +102,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   <main>
     <header>
       <h1>Bird Bowl</h1>
-      <p>お椀型ステージで、ボールをAI側の巣へ叩き込む1人用プロトタイプ</p>
+      <p>深いお椀型ステージで戦う、1人＋AI対AI2羽の2対2プロトタイプ</p>
     </header>
     <section class="game-shell">
       <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Bird Bowl game"></canvas>
@@ -134,7 +134,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
         <p>上＋B：斜め上突進　横／無入力＋B：横突進　下＋B：斜め下突進</p>
       </article>
     </section>
-    <p class="note">黄色があなた、青色がAIです。羽ばたきは無制限です。</p>
+    <p class="note">黄色チームがあなた＋味方AI、青色チームが相手AI2羽です。羽ばたきは無制限です。</p>
   </main>
   <script>(() => {
   "use strict";
@@ -169,11 +169,15 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   let score = [0, 0];
   let updraft;
   let goalLock = 0;
+  const platforms = [
+    { x: 430, y: 430, w: 150, h: 18 },
+    { x: 700, y: 430, w: 150, h: 18 },
+  ];
 
   const controls = [
     { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", flap: "KeyC", attackA: "KeyZ", attackB: "KeyX" },
   ];
-  const ai = { decision: 0, flap: false, attackA: false, attackB: false, move: 0, vertical: 0 };
+  
 
   addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(event.code)) event.preventDefault();
@@ -184,15 +188,16 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
 
   function floorY(x) {
     const n = Math.abs(x - W / 2) / (W / 2);
-    return 630 - 270 * n * n;
+    return 686 - 346 * n * n;
   }
 
-  function makePlayer(x, facing, index) {
+  function makePlayer(x, facing, index, team, isAI = false) {
     return {
       x, y: 410, vx: 0, vy: 0,
       radius: 38,
       facing,
-      index,
+      index, team, isAI,
+      aiState: { decision: 0, flap: false, attackA: false, attackB: false, move: 0, vertical: 0 },
       grounded: false,
       cooldown: 0,
       flapCooldown: 0,
@@ -204,8 +209,13 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   }
 
   function resetRound() {
-    players = [makePlayer(370, 1, 0), makePlayer(910, -1, 1)];
-    ball = { x: W / 2, y: 220, vx: 0, vy: 0, radius: 23, spin: 0 };
+    players = [
+      makePlayer(315, 1, 0, 0, false),
+      makePlayer(470, 1, 1, 0, true),
+      makePlayer(810, -1, 2, 1, true),
+      makePlayer(965, -1, 3, 1, true),
+    ];
+    ball = { x: W / 2, y: 190, vx: 0, vy: 0, radius: 23, spin: 0 };
     updraft = { active: false, time: 0, next: random(4.5, 6.5), warning: 0 };
     goalLock = 0.8;
   }
@@ -275,27 +285,31 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   }
 
   function updateAI(p, dt) {
+    const ai = p.aiState;
     ai.decision -= dt;
     const dx = ball.x - p.x;
     const dy = ball.y - p.y;
-    const targetX = ball.x > W * 0.68 ? ball.x : Math.max(W * 0.48, ball.x - 55);
-    ai.move = Math.abs(targetX - p.x) < 24 ? 0 : Math.sign(targetX - p.x);
-    ai.vertical = dy < -45 ? -1 : dy > 45 ? 1 : 0;
+    const attackingRight = p.team === 0;
+    const supportOffset = p.index % 2 ? -70 : 70;
+    let targetX = ball.x + (attackingRight ? -55 : 55) + supportOffset;
+    targetX = clamp(targetX, 90, W - 90);
+    ai.move = Math.abs(targetX - p.x) < 22 ? 0 : Math.sign(targetX - p.x);
+    ai.vertical = dy < -45 ? -1 : dy > 50 ? 1 : 0;
     ai.flap = false; ai.attackA = false; ai.attackB = false;
     if (ai.decision <= 0) {
-      ai.decision = random(0.08, 0.17);
-      if ((dy < -55 || p.y > floorY(p.x) - 165) && p.flapCooldown <= 0) ai.flap = true;
+      ai.decision = random(0.08, 0.18);
+      if ((dy < -55 || p.y > floorY(p.x) - 160) && p.flapCooldown <= 0) ai.flap = true;
       if (p.cooldown <= 0 && p.action === "neutral") {
-        const close = Math.abs(dx) < 115 && Math.abs(dy) < 120;
-        if (close) ai.attackA = true;
-        else if (Math.abs(dx) < 285) ai.attackB = true;
+        const closeBall = Math.abs(dx) < 110 && Math.abs(dy) < 120;
+        if (closeBall && ball.y < p.y + 45) ai.attackA = true;
+        else if (Math.abs(dx) < 235 && Math.random() < 0.55) ai.attackB = true;
       }
     }
   }
 
   function updatePlayer(p, dt) {
     const c = controls[0];
-    if (p.index === 1) updateAI(p, dt);
+    if (p.isAI) updateAI(p, dt);
     p.cooldown = Math.max(0, p.cooldown - dt);
     p.flapCooldown = Math.max(0, p.flapCooldown - dt);
     p.flash = Math.max(0, p.flash - dt);
@@ -303,7 +317,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     if (p.action === "neutral") {
       let move = 0, vertical = 0;
       let flapNow = false, attackANow = false, attackBNow = false;
-      if (p.index === 0) {
+      if (!p.isAI) {
         if (keys.has(c.left)) move -= 1;
         if (keys.has(c.right)) move += 1;
         if (keys.has(c.up)) vertical -= 1;
@@ -361,6 +375,19 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       p.vx *= 0.94;
       if (["slam", "dashDown"].includes(p.action)) p.action = "neutral";
     }
+    for (const platform of platforms) {
+      const left = platform.x, right = platform.x + platform.w;
+      const top = platform.y;
+      const prevBottom = p.y - p.vy * dt + p.radius;
+      const bottom = p.y + p.radius;
+      if (p.vy >= 0 && p.x > left - p.radius * .45 && p.x < right + p.radius * .45 &&
+          prevBottom <= top + 5 && bottom >= top) {
+        p.y = top - p.radius;
+        p.vy = 0;
+        p.grounded = true;
+        p.vx *= 0.94;
+      }
+    }
     applyUpdraft(p, dt, 1);
   }
 
@@ -379,12 +406,14 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       const hit = attackHitbox(p);
       if (!hit || p.hitUsed) continue;
       let connected = false;
-      const other = players[1 - p.index];
-      if (len(other.x - hit.x, other.y - hit.y) < other.radius + hit.r) {
-        other.vx = hit.kx;
-        other.vy = hit.ky;
-        other.flash = 0.15;
-        connected = true;
+      for (const other of players) {
+        if (other === p || other.team === p.team) continue;
+        if (len(other.x - hit.x, other.y - hit.y) < other.radius + hit.r) {
+          other.vx = hit.kx;
+          other.vy = hit.ky;
+          other.flash = 0.15;
+          connected = true;
+        }
       }
       if (len(ball.x - hit.x, ball.y - hit.y) < ball.radius + hit.r) {
         ball.vx = hit.kx * 1.18;
@@ -396,20 +425,24 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
   }
 
   function resolvePlayerCollision() {
-    const a = players[0], b = players[1];
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const d = len(dx, dy) || 1;
-    const minD = a.radius + b.radius;
-    if (d < minD) {
-      const nx = dx / d, ny = dy / d;
-      const push = (minD - d) / 2;
-      a.x -= nx * push; a.y -= ny * push;
-      b.x += nx * push; b.y += ny * push;
-      const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-      if (rv < 0) {
-        const impulse = -rv * 0.6;
-        a.vx -= nx * impulse; a.vy -= ny * impulse;
-        b.vx += nx * impulse; b.vy += ny * impulse;
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i + 1; j < players.length; j++) {
+        const a = players[i], b = players[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = len(dx, dy) || 1;
+        const minD = a.radius + b.radius;
+        if (d < minD) {
+          const nx = dx / d, ny = dy / d;
+          const push = (minD - d) / 2;
+          a.x -= nx * push; a.y -= ny * push;
+          b.x += nx * push; b.y += ny * push;
+          const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rv < 0) {
+            const impulse = -rv * 0.55;
+            a.vx -= nx * impulse; a.vy -= ny * impulse;
+            b.vx += nx * impulse; b.vy += ny * impulse;
+          }
+        }
       }
     }
   }
@@ -435,6 +468,19 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
       ball.vx *= 0.992;
 
       if (Math.abs(ball.vy) < 65) ball.vy = -42;
+    }
+
+    for (const platform of platforms) {
+      const left = platform.x, right = platform.x + platform.w;
+      const top = platform.y;
+      const prevBottom = ball.y - ball.vy * dt + ball.radius;
+      const bottom = ball.y + ball.radius;
+      if (ball.vy >= 0 && ball.x > left - ball.radius && ball.x < right + ball.radius &&
+          prevBottom <= top + 4 && bottom >= top) {
+        ball.y = top - ball.radius;
+        ball.vy *= -0.52;
+        ball.vx *= 0.96;
+      }
     }
 
     // 巣の底は一方通行ではない。下側から突き抜けようとした球を弾き返す。
@@ -577,6 +623,31 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     ctx.restore();
   }
 
+
+  function drawPlatforms() {
+    for (const platform of platforms) {
+      ctx.save();
+      ctx.fillStyle = "#20c96b";
+      ctx.strokeStyle = "#222";
+      ctx.lineWidth = 8;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#f7b51d";
+      ctx.beginPath();
+      ctx.moveTo(platform.x + 22, platform.y + platform.h);
+      ctx.lineTo(platform.x + platform.w - 22, platform.y + platform.h);
+      ctx.lineTo(platform.x + platform.w * .62, platform.y + 78);
+      ctx.lineTo(platform.x + platform.w * .38, platform.y + 78);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
   function drawUpdraft() {
     if (!updraft.active && !updraft.warning) return;
     const alpha = updraft.active ? 0.8 : 0.2 + updraft.warning * 0.35;
@@ -627,7 +698,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     if (p.action === "dashUp") rotation = -0.58;
     if (p.action === "dashDown") rotation = 0.58;
     ctx.rotate(rotation);
-    if (p.index === 1) ctx.filter = "hue-rotate(185deg) saturate(1.35) brightness(.88)";
+    if (p.team === 1) ctx.filter = "hue-rotate(185deg) saturate(1.35) brightness(.88)";
     if (p.flash > 0) ctx.globalAlpha = 0.45 + Math.sin(performance.now() * .06) * .25;
     const fast = ["dash", "dashUp", "dashDown", "thrust"].includes(p.action);
     const w = fast ? 138 : 112;
@@ -641,7 +712,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     ctx.fillStyle = "#222";
     ctx.font = "900 52px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText(`あなた ${score[0]}  -  ${score[1]} AI`, W/2, 65);
+    ctx.fillText(`黄色チーム ${score[0]}  -  ${score[1]} 青色チーム`, W/2, 65);
     ctx.font = "800 22px system-ui";
     ctx.fillText(updraft.active ? "上昇気流！" : `次の風まで ${Math.max(0, updraft.next).toFixed(1)}秒`, W/2, 98);
   }
@@ -651,6 +722,7 @@ kbd { display: inline-block; min-width: 2em; margin: 0 2px; padding: 2px 6px; bo
     drawNest(92, false);
     drawNest(W - 92, true);
     drawBowl();
+    drawPlatforms();
     drawUpdraft();
     drawBall();
     players.forEach(drawPlayer);
